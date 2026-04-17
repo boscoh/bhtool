@@ -6,11 +6,10 @@ import io
 import sys
 import typing
 from json import load as json_load
+from json import loads as json_loads
 
-from cyclopts import App
+from path import Path
 from ruyaml import YAML
-
-app = App()
 
 indent = "  "
 
@@ -57,34 +56,23 @@ def walk_d(o, level=0, skip_first_indent=False):
         print_out()
 
 
-
-@app.default
-def run(json: str = None, yaml: str = None):
-    """Convert JSON or YAML to Python dict format.
-
-    Reads from stdin if no file is specified.
-
-    :param json: Path to incoming JSON file
-    :param yaml: Path to incoming YAML file
-    """
+def todict_run(json: str | None = None, yaml: str | None = None):
     if json:
-        with open(json) as f:
-            incoming_json = json_load(f)
+        incoming_json = json_loads(Path(json).read_text())
     elif yaml:
         yaml_reader = YAML(typ="safe")
         yaml_reader.default_flow_style = False
-        with open(yaml) as handle:
-            incoming_json = yaml_reader.load(handle)
+        incoming_json = yaml_reader.load(Path(yaml).read_text())
     elif not sys.stdin.isatty():
         incoming_json = json_load(sys.stdin)
     else:
-        app.help_print()
+        from btools.cli import app
+
+        app["todict"].help_print()
         return
+    global output
+    output = io.StringIO()
     walk_d(incoming_json)
     contents = output.getvalue()
     output.close()
     print(contents)
-
-
-if __name__ == "__main__":
-    app()

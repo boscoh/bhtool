@@ -2,30 +2,17 @@
 
 """Remove node_modules and package-lock.json from directories"""
 
-import shutil
-from pathlib import Path
+from path import Path
 
-from cyclopts import App
-
-app = App()
+from btools.utils import walk_paths
 
 
-def walk(path):
-    for p in Path(path).iterdir():
-        yield p.resolve()
-        if p.is_dir():
-            yield from walk(p)
-
-
-@app.default
-def main():
-    """Recursively remove node_modules directories and package-lock.json files."""
-    p = Path(".").resolve()
-    print("Checking for npm modules", p)
+def rm_npm_run():
+    print("Checking for npm modules", Path(".").resolve())
 
     node_modules = []
     package_locks = []
-    for d in walk("."):
+    for d in walk_paths("."):
         if d.name.endswith("node_modules"):
             node_modules.append(d)
         if d.name.endswith("package-lock.json"):
@@ -37,8 +24,4 @@ def main():
 
     for d in reversed(node_modules):
         print("remove directory", d)
-        shutil.rmtree(d)
-
-
-if __name__ == "__main__":
-    app()
+        d.rmtree()

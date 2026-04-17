@@ -2,29 +2,16 @@
 
 """Plot parquet files"""
 
-import os
-import platform
-import subprocess
-from pathlib import Path
+from path import Path
 
 import matplotlib as mpl
 import pandas
-from cyclopts import App
 from matplotlib import pyplot as plt
 from pandas.plotting import register_matplotlib_converters
 
+from btools.utils import open_path
+
 register_matplotlib_converters()
-
-app = App()
-
-
-def open_file(filepath):
-    if platform.system() == "Darwin":  # macOS
-        subprocess.call(("open", filepath))
-    elif platform.system() == "Windows":  # Windows
-        os.startfile(filepath)
-    else:  # linux variants
-        subprocess.call(("xdg-open", filepath))
 
 
 def plot_df_columns_as_scatter(df):
@@ -48,7 +35,6 @@ def plot_df_columns_as_scatter(df):
 
         ax.set_title(col, color=color, fontdict={"fontsize": 10}, pad=0, loc="right")
 
-        # recolor the axes and axes decorators
         ax_color = (0.4, 0.4, 0.4)
 
         ax.tick_params(axis="x", colors=ax_color)
@@ -75,13 +61,19 @@ def resample_df(df, interval="1s"):
     return df
 
 
-@app.default
-def main():
-    """Find and plot parquet files from data/results directory."""
-    d = next(Path().glob("**/data/results"))
+def _first_data_results_dir() -> Path:
+    for p in Path().walkdirs():
+        parts = p.parts()
+        if len(parts) >= 2 and parts[-2] == "data" and parts[-1] == "results":
+            return p
+    raise FileNotFoundError("Could not find a directory matching **/data/results")
+
+
+def dfplot_run():
+    d = _first_data_results_dir()
     print(f"Found (**/data/results) directory: {d}")
 
-    n = len(list(d.glob("**/*parquet")))
+    n = len(list(d.walkfiles("*.parquet")))
     print(f"Loading {n} parquet files...")
 
     df = pandas.read_parquet(d)
@@ -89,14 +81,10 @@ def main():
     if isinstance(df.index, pandas.DatetimeIndex):
         df = resample_df(df, "1s")
 
-    out_f = "data_logger_results.png"
+    out_f = Path("data_logger_results.png")
     print(f"Saving {out_f}")
     mpl.use("Agg")
     plot_df_columns_as_scatter(df)
     plt.savefig(out_f)
 
-    open_file(out_f)
-
-
-if __name__ == "__main__":
-    app()
+    open_path(out_f)

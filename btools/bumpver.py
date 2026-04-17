@@ -4,25 +4,18 @@
 
 import re
 import sys
-from pathlib import Path
+from path import Path
 from typing import Literal
-
-from cyclopts import App
 
 from btools.utils import run
 
-app = App(help_flags=["--help", "-h"])
 
-
-@app.default
-def main(part: Literal["major", "minor", "patch"] = None, *, publish: bool = True):
-    """Bump version in pyproject.toml, commit, push, and publish.
-
-    :param part: Version component to bump (major, minor, or patch)
-    :param publish: Also build and publish to PyPI
-    """
+def bump_version(part: Literal["major", "minor", "patch"] | None = None, *, publish: bool = True):
+    """Bump version in pyproject.toml, commit, push, and publish."""
     if part is None:
-        app.help_print()
+        from btools.cli import app
+
+        app["bumpver"].help_print()
         return
 
     pyproject = Path("pyproject.toml")
@@ -56,7 +49,3 @@ def main(part: Literal["major", "minor", "patch"] = None, *, publish: bool = Tru
     if publish:
         run("uv build")
         run(f"uv publish dist/*-{new_version}*")
-
-
-if __name__ == "__main__":
-    app()

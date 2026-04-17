@@ -13,11 +13,13 @@ from rich.table import Table
 
 from microeval.llm import get_llm_client
 
-load_dotenv(Path(__file__).realpath().parent / ".env")
+_pkg_root = Path(__file__).parent
+
+load_dotenv(_pkg_root / ".env")
 
 logger = logging.getLogger(__name__)
 
-MOVIE_MAPPING_FILE = Path(__file__).realpath().parent / "movie_mapping.json"
+MOVIE_MAPPING_FILE = _pkg_root / "movie_mapping.json"
 
 
 NORMALIZE_SYSTEM_PROMPT = textwrap.dedent("""
@@ -216,47 +218,26 @@ def rename_movies(root_dir, dry_run=True, mapping=None):
         print("=" * 80)
 
 
-def _root_dir(movies_dir: str | Path | None = None) -> Path:
+def _root_dir(movies_dir: str | None = None) -> Path:
     if movies_dir is not None:
         return Path(movies_dir)
     return Path.cwd()
 
 
-def main():
+def movies_rename_impl(root_dir: str | None = None, execute: bool = False):
+    import logging
+    import os
     import sys
 
-    from cyclopts import App
-
     logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stderr)
-    app = App(
-        name="movie-lister",
-        help="Manage movie directories and files: normalize names with LLM.",
-    )
-
-    @app.command
-    def rename(root_dir: str | None = None, execute: bool = False):
-        """Rename movie dirs and files to normalized names using mapping from LLM.
-
-        :param root_dir: Root directory containing movies (positional); default is current working directory.
-        :param execute: If true, perform renames; otherwise dry run (table output).
-        """
-        import os
-
-        root = _root_dir(root_dir)
-        svc = os.environ.get("LLM_SERVICE", "openai")
-        print(f"Getting mapping from LLM (service={svc})...\n")
-        mapping = run_normalize_with_llm(root, svc)
-        with open(MOVIE_MAPPING_FILE, "w") as f:
-            json.dump(mapping, f, indent=2)
-        print(f"Saved to {MOVIE_MAPPING_FILE}\n")
-        if execute:
-            print("⚠️  PERFORMING ACTUAL RENAME")
-            rename_movies(root, dry_run=False, mapping=mapping)
-        else:
-            rename_movies(root, dry_run=True, mapping=mapping)
-
-    app()
-
-
-if __name__ == "__main__":
-    main()
+    root = _root_dir(root_dir)
+    svc = os.environ.get("LLM_SERVICE", "openai")
+    print(f"Getting mapping from LLM (service={svc})...\n")
+    mapping = run_normalize_with_llm(root, svc)
+    MOVIE_MAPPING_FILE.write_text(json.dumps(mapping, indent=2))
+    print(f"Saved to {MOVIE_MAPPING_FILE}\n")
+    if execute:
+        print("⚠️  PERFORMING ACTUAL RENAME")
+        rename_movies(root, dry_run=False, mapping=mapping)
+    else:
+        rename_movies(root, dry_run=True, mapping=mapping)

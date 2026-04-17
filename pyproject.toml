@@ -23,16 +23,8 @@ dependencies = [
 ]
 
 [project.scripts]
-bumpver = "btools.bumpver:app"
-a = "btools.a:app"
-clear_chmod = "btools.clear_chmod:app"
-npread = "btools.npread:app"
-dfplot = "btools.dfplot:app"
-psword = "btools.psword:app"
-rm_npm = "btools.rm_npm:app"
-text2 = "btools.text2:app"
-todict = "btools.todict:app"
-movies = "btools.list_movies:main"
+b = "btools.cli:main"
+btools = "btools.cli:main"
 
 [dependency-groups]
 dev = [

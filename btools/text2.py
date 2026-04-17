@@ -2,19 +2,15 @@
 
 """cli convert between md|html|docx|pug"""
 
-from pathlib import Path
-
-from cyclopts import App
+from path import Path
 
 from btools.utils import run, run_output
-
-app = App()
 
 
 def convert_md_to_html(md, html):
     run(f"pandoc --from markdown --to html '{md}' -o '{html}'")
     txt = run_output(f"beautify {html}")
-    open(html, "w").write(txt)
+    Path(html).write_text(txt)
 
 
 def convert_md_to_docx(md, docx):
@@ -30,30 +26,21 @@ def convert_html_to_pug(html, pug):
 
 
 def convert_pug_to_html(pug, html):
-    import shutil
     temp_pug = Path(pug).with_suffix(".temp.pug")
-    shutil.copy(pug, temp_pug)
+    Path(pug).copy2(temp_pug)
     temp_html = temp_pug.with_suffix(".html")
     if temp_html.exists():
         temp_html.unlink()
     run(f"pug {temp_pug}  ")
     txt = run_output(f"beautify {temp_html}")
-    open(html, "w").write(txt)
+    Path(html).write_text(txt)
 
 
 def convert_html_to_md(html, md):
     run(f"pandoc --from html --to markdown {html} -o {md}")
 
 
-@app.default
-def main(in_fname: str, out_fname: str):
-    """Interconvert text-based formats: md, pug, docx, html.
-
-    Wrapper for executables: pandoc, pug, html2pug, beautify
-
-    :param in_fname: Input filename
-    :param out_fname: Output filename
-    """
+def text2_run(in_fname: str, out_fname: str):
     in_fname = Path(in_fname)
     out_fname = Path(out_fname)
 
@@ -79,7 +66,3 @@ def main(in_fname: str, out_fname: str):
         print(f"Error: can't handle .suffix: {in_fname} -> {out_fname}")
 
     print(f">>> Made {out_fname}")
-
-
-if __name__ == "__main__":
-    app()

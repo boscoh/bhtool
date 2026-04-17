@@ -2,24 +2,10 @@
 
 """Find processes with name"""
 
-from cyclopts import App
-
-from btools.utils import run_output
-
-app = App()
+from btools.utils import run, run_output
 
 
-@app.default
-def main(*words: str, kill: bool = False):
-    """Find processes by name and optionally kill them.
-
-    :param words: Process names to search for
-    :param kill: If True, kill matching processes
-    """
-    if not words:
-        app.help_print()
-        return
-
+def psword_run(words: tuple[str, ...], kill: bool = False):
     for word in words:
         txt = run_output(f"ps aux | grep {word}")
         for line in txt.splitlines():
@@ -31,12 +17,7 @@ def main(*words: str, kill: bool = False):
             if "psword" in line:
                 continue
             if kill:
-                kill_cmd = f"kill -9 {i_process}"
-                print(f"cmd: {kill_cmd} ({cmd})")
-                run_output(kill_cmd)
+                print(f"kill target ({cmd})")
+                run(f"kill -9 {i_process}")
             else:
                 print(f"process {i_process}: {cmd}")
-
-
-if __name__ == "__main__":
-    app()
