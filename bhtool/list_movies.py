@@ -9,14 +9,45 @@ import textwrap
 
 from dotenv import load_dotenv
 from path import Path
+from cyclopts.panel import CycloptsPanel
+from rich import box
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 
 from microeval.llm import get_llm_client
 
 _pkg_root = Path(__file__).parent
 
 load_dotenv(_pkg_root / ".env")
+
+_MOVIES_BORDER = "cyan"
+_MOVIES_TITLE = "movies"
+
+
+def _movies_console() -> Console:
+    return Console(highlight=False)
+
+
+def _panel_lines(body: Text | str, *, title: str = _MOVIES_TITLE, border: str = _MOVIES_BORDER) -> Panel:
+    return Panel(
+        body,
+        title=title,
+        border_style=border,
+        box=box.ROUNDED,
+        expand=True,
+        title_align="left",
+    )
+
+
+def _status_text(status: str) -> Text:
+    if status == "would rename":
+        return Text(status, style="green")
+    if "not found" in status:
+        return Text(status, style="red")
+    return Text(status, style="yellow")
+
 
 NORMALIZE_SYSTEM_PROMPT = textwrap.dedent("""
     You normalize movie and TV directory and file names for a media library.
@@ -75,10 +106,13 @@ def _parse_llm_json_object(result: dict) -> dict | None:
     return None
 
 
-async def normalize_names_with_llm(dir_names, file_names, service="openai"):
+async def normalize_names_with_llm(
+    dir_names, file_names, service="openai", *, console: Console | None = None
+):
     if not dir_names and not file_names:
         return {"directories": [], "files": []}
 
+    console = console or _movies_console()
     dir_list = "\n".join(f"- {n}" for n in dir_names) or "(none)"
     file_list = "\n".join(f"- {n}" for n in file_names) or "(none)"
     user_content = NORMALIZE_USER_PROMPT_TEMPLATE.format(
@@ -92,15 +126,22 @@ async def normalize_names_with_llm(dir_names, file_names, service="openai"):
 
     try:
         async with get_llm_client(service) as client:
-            print(f"LLM: service={client.service}, model={client.model}")
-            print("Getting mapping from LLM...")
+            llm_body = Text.assemble(
+                (f"service [bold]{client.service}[/bold]  model [bold]{client.model}[/bold]\n", ""),
+                ("Requesting normalized names from the LLM…", "dim"),
+            )
+            console.print(_panel_lines(llm_body, title="LLM", border="blue"))
             result = await client.get_completion(messages)
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
-        print(
-            "No LLM client: set LLM_SERVICE (openai, groq, ollama, bedrock) and the matching "
-            "API key or AWS/Ollama; use bhtool/.env or your environment — see README.",
-            file=sys.stderr,
+        err = _movies_console(stderr=True)
+        err.print(CycloptsPanel(str(e), title="Error", style="red"))
+        err.print(
+            CycloptsPanel(
+                "Set LLM_SERVICE (openai, groq, ollama, bedrock) and the matching API key or "
+                "AWS/Ollama; use bhtool/.env or your environment — see README.",
+                title="Hint",
+                style="yellow",
+            )
         )
         sys.exit(1)
     if result.get("text", "").strip().startswith("Error:"):
@@ -112,7 +153,8 @@ async def normalize_names_with_llm(dir_names, file_names, service="openai"):
     return {"directories": data.get("directories", []), "files": data.get("files", [])}
 
 
-def run_normalize_with_llm(root_dir, service="openai"):
+def run_normalize_with_llm(root_dir, service="openai", *, console: Console | None = None):
+    console = console or _movies_console()
     root = Path(root_dir)
     video_suffixes = {".avi", ".mkv", ".mp4", ".m4v", ".mov", ".wmv", ".webm"}
     skip_names = {
@@ -134,10 +176,33 @@ def run_normalize_with_llm(root_dir, service="openai"):
             file_names.append(p.name)
     dir_names.sort()
     file_names.sort()
-    return asyncio.run(normalize_names_with_llm(dir_names, file_names, service))
+    scan = Text.assemble(
+        ("Path ", ""),
+        (str(root.realpath()), "cyan"),
+        ("\n", ""),
+        (str(len(dir_names)), "bold"),
+        (
+            f" {'directory' if len(dir_names) == 1 else 'directories'}, ",
+            "",
+        ),
+        (str(len(file_names)), "bold"),
+        (
+            f" {'video file' if len(file_names) == 1 else 'video files'} · ",
+            "dim",
+        ),
+        ("LLM_SERVICE=", "dim"),
+        (service, "bold"),
+    )
+    console.print(_panel_lines(scan, title="Scan", border=_MOVIES_BORDER))
+    return asyncio.run(
+        normalize_names_with_llm(dir_names, file_names, service, console=console)
+    )
 
 
-def rename_movies(root_dir, dry_run=True, mapping=None):
+def rename_movies(
+    root_dir, dry_run=True, mapping=None, *, console: Console | None = None
+):
+    console = console or _movies_console()
     root = Path(root_dir)
     if mapping is None:
         mapping = {"directories": [], "files": []}
@@ -157,26 +222,24 @@ def rename_movies(root_dir, dry_run=True, mapping=None):
             skipped_count += 1
             if table_rows is not None:
                 table_rows.append(("DIR", old_name, new_name, "skip (not found)"))
-            elif dry_run:
-                print(f"⚠️  SKIP: {old_name} (not found)")
             continue
         if new_path.exists():
             skipped_count += 1
             if table_rows is not None:
                 table_rows.append(("DIR", old_name, new_name, "skip (exists)"))
-            elif dry_run:
-                print(f"⚠️  SKIP: {old_name} → {new_name} (target exists)")
             continue
         if dry_run:
-            if table_rows is not None:
-                table_rows.append(("DIR", old_name, new_name, "would rename"))
-            else:
-                print(f"📁 WOULD RENAME: {old_name}")
-                print(f"            TO: {new_name}")
+            table_rows.append(("DIR", old_name, new_name, "would rename"))
         else:
             old_path.rename(new_path)
-            print(f"✅ RENAMED: {old_name}")
-            print(f"        TO: {new_name}")
+            console.print(
+                Text.assemble(
+                    ("✅ DIR  ", "green"),
+                    (old_name, ""),
+                    (" → ", "dim"),
+                    (new_name, "cyan"),
+                )
+            )
             renamed_count += 1
 
     for e in files:
@@ -192,8 +255,6 @@ def rename_movies(root_dir, dry_run=True, mapping=None):
                 table_rows.append(
                     ("FILE", old_name, new_name + suffix, "skip (not found)")
                 )
-            elif dry_run:
-                print(f"⚠️  SKIP: {old_name} (not found)")
             continue
         if new_path.exists():
             skipped_count += 1
@@ -201,36 +262,58 @@ def rename_movies(root_dir, dry_run=True, mapping=None):
                 table_rows.append(
                     ("FILE", old_name, new_name + suffix, "skip (exists)")
                 )
-            elif dry_run:
-                print(f"⚠️  SKIP: {old_name} → {new_name}{suffix} (target exists)")
             continue
         if dry_run:
-            if table_rows is not None:
-                table_rows.append(("FILE", old_name, new_name + suffix, "would rename"))
-            else:
-                print(f"📄 WOULD RENAME: {old_name}")
-                print(f"            TO: {new_name}{suffix}")
+            table_rows.append(("FILE", old_name, new_name + suffix, "would rename"))
         else:
             old_path.rename(new_path)
-            print(f"✅ RENAMED: {old_name}")
-            print(f"        TO: {new_name}{suffix}")
+            console.print(
+                Text.assemble(
+                    ("✅ FILE ", "green"),
+                    (old_name, ""),
+                    (" → ", "dim"),
+                    (new_name + suffix, "cyan"),
+                )
+            )
             renamed_count += 1
 
     if table_rows is not None:
-        console = Console()
-        tbl = Table(title="Rename (dry run)", show_header=True, header_style="bold")
-        tbl.add_column("Type", style="dim")
+        tbl = Table(show_header=True, header_style="bold cyan", border_style="dim")
+        tbl.add_column("Type", style="dim", no_wrap=True)
         tbl.add_column("From")
         tbl.add_column("To")
         tbl.add_column("Status")
-        for row in table_rows:
-            tbl.add_row(*row)
-        console.print(tbl)
-        console.print(f"\n[dim]{len(table_rows)} items[/dim]")
+        for typ, old_name, new_name, status in table_rows:
+            tbl.add_row(typ, old_name, new_name, _status_text(status))
+        body = tbl
+        if not table_rows:
+            body = Text("No renames to preview (all names already match or no mappings).", style="dim")
+        console.print(
+            Panel(
+                body,
+                title="Rename (dry run)",
+                border_style=_MOVIES_BORDER,
+                box=box.ROUNDED,
+                expand=True,
+                title_align="left",
+            )
+        )
+        summary = Text.assemble(
+            (str(len(table_rows)), "bold"),
+            (" item", ""),
+            ("s" if len(table_rows) != 1 else "", ""),
+            (" in table", "dim"),
+        )
+        console.print(_panel_lines(summary, title="Summary", border="dim"))
     elif not dry_run:
-        print("\n" + "=" * 80)
-        print(f"COMPLETE: {renamed_count} items renamed, {skipped_count} skipped")
-        print("=" * 80)
+        done = Text.assemble(
+            ("Complete: ", ""),
+            (str(renamed_count), "bold green"),
+            (" renamed, ", ""),
+            (str(skipped_count), "bold yellow"),
+            (" skipped", ""),
+        )
+        console.print(_panel_lines(done, title="Done", border="green"))
 
 
 def _root_dir(movies_dir: str | None = None) -> Path:
@@ -240,16 +323,37 @@ def _root_dir(movies_dir: str | None = None) -> Path:
 
 
 def rename(root_dir: str | None = None, execute: bool = False):
-    print("Movies: LLM-normalize names here -> movie_mapping.json -> preview table.")
-    print("--execute applies renames; default is dry-run (no moves).")
+    console = _movies_console()
+    intro = Text.assemble(
+        ("LLM-normalize names → ", ""),
+        ("movie_mapping.json", "cyan"),
+        (" → preview table\n", ""),
+        ("--execute", "bold"),
+        (" applies renames on disk; default is dry-run (no moves).", "dim"),
+    )
+    console.print(_panel_lines(intro, title=_MOVIES_TITLE, border=_MOVIES_BORDER))
     root = _root_dir(root_dir)
     svc = os.environ.get("LLM_SERVICE", "openai")
-    mapping = run_normalize_with_llm(root, svc)
+    mapping = run_normalize_with_llm(root, svc, console=console)
     mapping_path = Path.cwd() / "movie_mapping.json"
     mapping_path.write_text(json.dumps(mapping, indent=2))
-    print(f"Saved to {mapping_path}\n")
+    saved = Text.assemble(
+        ("Wrote ", ""),
+        (str(mapping_path.realpath()), "cyan"),
+    )
+    console.print(_panel_lines(saved, title="Mapping file", border=_MOVIES_BORDER))
+    console.print()
     if execute:
-        print("⚠️  PERFORMING ACTUAL RENAME")
-        rename_movies(root, dry_run=False, mapping=mapping)
+        console.print(
+            Panel(
+                Text("Applying renames on disk.", style="bold yellow"),
+                title="Execute",
+                border_style="yellow",
+                box=box.ROUNDED,
+                expand=True,
+                title_align="left",
+            )
+        )
+        rename_movies(root, dry_run=False, mapping=mapping, console=console)
     else:
-        rename_movies(root, dry_run=True, mapping=mapping)
+        rename_movies(root, dry_run=True, mapping=mapping, console=console)
