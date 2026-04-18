@@ -1,7 +1,7 @@
 [project]
 name = "bhtool"
 version = "0.1.10"
-description = "Add your description here"
+description = "Assorted CLI utilities for Bosco’s workflows (dev, media, macOS, LLM helpers)."
 readme = "README.md"
 requires-python = ">=3.13"
 authors = [
