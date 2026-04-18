@@ -4,7 +4,7 @@
 
 from path import Path
 
-from btools.utils import run
+from bhtool.utils import run
 
 skip_directories = ["__pycache__", "node_modules", ".git"]
 

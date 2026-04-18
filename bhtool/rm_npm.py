@@ -4,7 +4,7 @@
 
 from path import Path
 
-from btools.utils import walk_paths
+from bhtool.utils import walk_paths
 
 
 def rm_npm_run():

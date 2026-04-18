@@ -4,7 +4,7 @@
 
 from path import Path
 
-from btools.utils import run
+from bhtool.utils import run
 
 search_dirs = [Path("/Applications"), Path.home() / "MyApps"]
 

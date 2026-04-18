@@ -66,7 +66,7 @@ def todict_run(json: str | None = None, yaml: str | None = None):
     elif not sys.stdin.isatty():
         incoming_json = json_load(sys.stdin)
     else:
-        from btools.cli import app
+        from bhtool.cli import app
 
         app["todict"].help_print()
         return

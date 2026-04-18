@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Shared utilities for btools scripts."""
+"""Shared utilities for bhtool scripts."""
 
 import os
 import platform

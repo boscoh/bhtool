@@ -7,13 +7,13 @@ import sys
 from path import Path
 from typing import Literal
 
-from btools.utils import run
+from bhtool.utils import run
 
 
 def bump_version(part: Literal["major", "minor", "patch"] | None = None, *, publish: bool = True):
     """Bump version in pyproject.toml, commit, push, and publish."""
     if part is None:
-        from btools.cli import app
+        from bhtool.cli import app
 
         app["bumpver"].help_print()
         return

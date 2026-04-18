@@ -1,5 +1,5 @@
 [project]
-name = "btools"
+name = "bhtool"
 version = "0.1.10"
 description = "Add your description here"
 readme = "README.md"
@@ -23,8 +23,8 @@ dependencies = [
 ]
 
 [project.scripts]
-b = "btools.cli:main"
-btools = "btools.cli:main"
+b = "bhtool.cli:main"
+bhtool = "bhtool.cli:main"
 
 [dependency-groups]
 dev = [
@@ -39,7 +39,7 @@ build-backend = "hatchling.build"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["btools"]
+packages = ["bhtool"]
 
 [tool.uv]
 package = true

@@ -1,4 +1,4 @@
-# btools
+# bhtool
 
 CLI utilities for version bumping, file conversion, process management, and dev workflows. Python ≥3.12.
 

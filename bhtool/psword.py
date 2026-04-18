@@ -2,7 +2,7 @@
 
 """Find processes with name"""
 
-from btools.utils import run, run_output
+from bhtool.utils import run, run_output
 
 
 def psword_run(words: tuple[str, ...], kill: bool = False):

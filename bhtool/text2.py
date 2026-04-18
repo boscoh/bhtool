@@ -4,7 +4,7 @@
 
 from path import Path
 
-from btools.utils import run, run_output
+from bhtool.utils import run, run_output
 
 
 def convert_md_to_html(md, html):

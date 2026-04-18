@@ -9,7 +9,7 @@ import pandas
 from matplotlib import pyplot as plt
 from pandas.plotting import register_matplotlib_converters
 
-from btools.utils import open_path
+from bhtool.utils import open_path
 
 register_matplotlib_converters()
 
