@@ -56,7 +56,7 @@ def walk_d(o, level=0, skip_first_indent=False):
         print_out()
 
 
-def todict_run(json: str | None = None, yaml: str | None = None):
+def todict(json: str | None = None, yaml: str | None = None):
     if json:
         incoming_json = json_loads(Path(json).read_text())
     elif yaml:

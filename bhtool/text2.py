@@ -40,7 +40,7 @@ def convert_html_to_md(html, md):
     run(f"pandoc --from html --to markdown {html} -o {md}")
 
 
-def text2_run(in_fname: str, out_fname: str):
+def text2(in_fname: str, out_fname: str):
     in_fname = Path(in_fname)
     out_fname = Path(out_fname)
 

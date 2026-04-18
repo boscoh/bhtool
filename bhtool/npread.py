@@ -5,7 +5,7 @@
 import numpy
 
 
-def npread_run(files: tuple[str, ...]):
+def npread(files: tuple[str, ...]):
     for arg in files:
         m = numpy.load(arg)
         print("Numpy shape", m.shape)

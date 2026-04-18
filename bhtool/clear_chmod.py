@@ -9,7 +9,7 @@ from bhtool.utils import run
 skip_directories = ["__pycache__", "node_modules", ".git"]
 
 
-def clear_chmod_run():
+def clear_chmod():
     for f in Path(".").iterdir():
         if f.name.startswith("."):
             continue

@@ -10,7 +10,7 @@ from typing import Literal
 from bhtool.utils import run
 
 
-def bump_version(part: Literal["major", "minor", "patch"] | None = None, *, publish: bool = True):
+def bumpver(part: Literal["major", "minor", "patch"] | None = None, *, publish: bool = True):
     """Bump version in pyproject.toml, commit, push, and publish."""
     if part is None:
         from bhtool.cli import app

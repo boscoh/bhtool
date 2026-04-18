@@ -6,15 +6,6 @@ from typing import Literal
 
 from cyclopts import App
 
-from bhtool.run import open_apps
-from bhtool.bumpver import bump_version
-from bhtool.clear_chmod import clear_chmod_run
-from bhtool.npread import npread_run
-from bhtool.psword import psword_run
-from bhtool.rm_npm import rm_npm_run
-from bhtool.text2 import text2_run
-from bhtool.todict import todict_run
-
 app = App(name="bhtool", help="bhtool utilities")
 
 
@@ -24,19 +15,25 @@ def run(*params: str):
     if not params:
         app["run"].help_print()
         return
-    open_apps(*params)
+    from bhtool.run import run
+
+    run(*params)
 
 
 @app.command
 def bumpver(part: Literal["major", "minor", "patch"] | None = None, *, publish: bool = True):
     """Bump version in pyproject.toml, commit, push, and optionally publish to PyPI."""
-    bump_version(part, publish=publish)
+    from bhtool.bumpver import bumpver
+
+    bumpver(part, publish=publish)
 
 
 @app.command
 def clear_chmod():
     """Remove execute permissions from non-script files and write permissions from group/other."""
-    clear_chmod_run()
+    from bhtool.clear_chmod import clear_chmod
+
+    clear_chmod()
 
 
 @app.command
@@ -45,15 +42,17 @@ def npread(*files: str):
     if not files:
         app["npread"].help_print()
         return
-    npread_run(files)
+    from bhtool.npread import npread
+
+    npread(files)
 
 
 @app.command(name="dfplot")
-def dfplot_cmd():
+def dfplot():
     """Find and plot parquet files from data/results directory."""
-    from bhtool.dfplot import dfplot_run
+    from bhtool.dfplot import dfplot
 
-    dfplot_run()
+    dfplot()
 
 
 @app.command
@@ -62,25 +61,33 @@ def psword(*words: str, kill: bool = False):
     if not words:
         app["psword"].help_print()
         return
-    psword_run(words, kill=kill)
+    from bhtool.psword import psword
+
+    psword(words, kill=kill)
 
 
 @app.command
 def rm_npm():
     """Recursively remove node_modules directories and package-lock.json files."""
-    rm_npm_run()
+    from bhtool.rm_npm import rm_npm
+
+    rm_npm()
 
 
 @app.command
 def text2(in_fname: str, out_fname: str):
     """Interconvert text-based formats: md, pug, docx, html."""
-    text2_run(in_fname, out_fname)
+    from bhtool.text2 import text2
+
+    text2(in_fname, out_fname)
 
 
 @app.command
 def todict(json: str | None = None, yaml: str | None = None):
     """Convert JSON or YAML to Python dict format."""
-    todict_run(json=json, yaml=yaml)
+    from bhtool.todict import todict
+
+    todict(json=json, yaml=yaml)
 
 
 movies_app = App(
@@ -96,9 +103,9 @@ def rename(root_dir: str | None = None, execute: bool = False):
     :param root_dir: Root directory containing movies (positional); default is current working directory.
     :param execute: If true, perform renames; otherwise dry run (table output).
     """
-    from bhtool.list_movies import movies_rename_impl
+    from bhtool.list_movies import rename
 
-    movies_rename_impl(root_dir=root_dir, execute=execute)
+    rename(root_dir=root_dir, execute=execute)
 
 
 app.command(movies_app)

@@ -69,7 +69,7 @@ def _first_data_results_dir() -> Path:
     raise FileNotFoundError("Could not find a directory matching **/data/results")
 
 
-def dfplot_run():
+def dfplot():
     d = _first_data_results_dir()
     print(f"Found (**/data/results) directory: {d}")
 

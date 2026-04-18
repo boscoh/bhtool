@@ -9,7 +9,7 @@ from bhtool.utils import run
 search_dirs = [Path("/Applications"), Path.home() / "MyApps"]
 
 
-def open_apps(*params: str):
+def run(*params: str):
     params = list(params)
     use_app = params[0].lower()
     for search_dir in search_dirs:

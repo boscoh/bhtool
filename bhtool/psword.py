@@ -5,7 +5,7 @@
 from bhtool.utils import run, run_output
 
 
-def psword_run(words: tuple[str, ...], kill: bool = False):
+def psword(words: tuple[str, ...], kill: bool = False):
     for word in words:
         txt = run_output(f"ps aux | grep {word}")
         for line in txt.splitlines():

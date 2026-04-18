@@ -224,7 +224,7 @@ def _root_dir(movies_dir: str | None = None) -> Path:
     return Path.cwd()
 
 
-def movies_rename_impl(root_dir: str | None = None, execute: bool = False):
+def rename(root_dir: str | None = None, execute: bool = False):
     import logging
     import os
     import sys

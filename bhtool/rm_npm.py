@@ -7,7 +7,7 @@ from path import Path
 from bhtool.utils import walk_paths
 
 
-def rm_npm_run():
+def rm_npm():
     print("Checking for npm modules", Path(".").resolve())
 
     node_modules = []
