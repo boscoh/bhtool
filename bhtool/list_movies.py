@@ -2,7 +2,7 @@
 
 import asyncio
 import json
-import logging
+import os
 import re
 import textwrap
 
@@ -16,11 +16,6 @@ from microeval.llm import get_llm_client
 _pkg_root = Path(__file__).parent
 
 load_dotenv(_pkg_root / ".env")
-
-logger = logging.getLogger(__name__)
-
-MOVIE_MAPPING_FILE = _pkg_root / "movie_mapping.json"
-
 
 NORMALIZE_SYSTEM_PROMPT = textwrap.dedent("""
     You normalize movie and TV directory and file names for a media library.
@@ -94,11 +89,10 @@ async def normalize_names_with_llm(dir_names, file_names, service="openai"):
         {"role": "user", "content": user_content},
     ]
 
-    logger.info("Initializing LLM (service=%s)", service)
     async with get_llm_client(service) as client:
-        logger.info("Calling LLM (service=%s) for normalize mapping", service)
+        print(f"LLM: service={client.service}, model={client.model}")
+        print("Getting mapping from LLM...")
         result = await client.get_completion(messages)
-        logger.info("LLM response received (%s chars)", len(result.get("text", "")))
     if result.get("text", "").strip().startswith("Error:"):
         raise RuntimeError(result["text"])
 
@@ -225,17 +219,12 @@ def _root_dir(movies_dir: str | None = None) -> Path:
 
 
 def rename(root_dir: str | None = None, execute: bool = False):
-    import logging
-    import os
-    import sys
-
-    logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stderr)
     root = _root_dir(root_dir)
     svc = os.environ.get("LLM_SERVICE", "openai")
-    print(f"Getting mapping from LLM (service={svc})...\n")
     mapping = run_normalize_with_llm(root, svc)
-    MOVIE_MAPPING_FILE.write_text(json.dumps(mapping, indent=2))
-    print(f"Saved to {MOVIE_MAPPING_FILE}\n")
+    mapping_path = Path.cwd() / "movie_mapping.json"
+    mapping_path.write_text(json.dumps(mapping, indent=2))
+    print(f"Saved to {mapping_path}\n")
     if execute:
         print("⚠️  PERFORMING ACTUAL RENAME")
         rename_movies(root, dry_run=False, mapping=mapping)

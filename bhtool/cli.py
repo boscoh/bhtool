@@ -6,7 +6,7 @@ from typing import Literal
 
 from cyclopts import App
 
-app = App(name="bhtool", help="bhtool utilities")
+app = App(name="bhtool", help="boscoh tools")
 
 
 @app.command(name="run")
