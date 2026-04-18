@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import re
+import sys
 import textwrap
 
 from dotenv import load_dotenv
@@ -89,10 +90,19 @@ async def normalize_names_with_llm(dir_names, file_names, service="openai"):
         {"role": "user", "content": user_content},
     ]
 
-    async with get_llm_client(service) as client:
-        print(f"LLM: service={client.service}, model={client.model}")
-        print("Getting mapping from LLM...")
-        result = await client.get_completion(messages)
+    try:
+        async with get_llm_client(service) as client:
+            print(f"LLM: service={client.service}, model={client.model}")
+            print("Getting mapping from LLM...")
+            result = await client.get_completion(messages)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        print(
+            "No LLM client: set LLM_SERVICE (openai, groq, ollama, bedrock) and the matching "
+            "API key or AWS/Ollama; use bhtool/.env or your environment — see README.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     if result.get("text", "").strip().startswith("Error:"):
         raise RuntimeError(result["text"])
 
@@ -105,7 +115,14 @@ async def normalize_names_with_llm(dir_names, file_names, service="openai"):
 def run_normalize_with_llm(root_dir, service="openai"):
     root = Path(root_dir)
     video_suffixes = {".avi", ".mkv", ".mp4", ".m4v", ".mov", ".wmv", ".webm"}
-    skip_names = {".DS_Store", "list_movies.py", "pyproject.toml", ".venv", ".ruff_cache", "__pycache__"}
+    skip_names = {
+        ".DS_Store",
+        "list_movies.py",
+        "pyproject.toml",
+        ".venv",
+        ".ruff_cache",
+        "__pycache__",
+    }
     dir_names = []
     file_names = []
     for p in root.iterdir():
@@ -172,14 +189,18 @@ def rename_movies(root_dir, dry_run=True, mapping=None):
         if not old_path.exists():
             skipped_count += 1
             if table_rows is not None:
-                table_rows.append(("FILE", old_name, new_name + suffix, "skip (not found)"))
+                table_rows.append(
+                    ("FILE", old_name, new_name + suffix, "skip (not found)")
+                )
             elif dry_run:
                 print(f"⚠️  SKIP: {old_name} (not found)")
             continue
         if new_path.exists():
             skipped_count += 1
             if table_rows is not None:
-                table_rows.append(("FILE", old_name, new_name + suffix, "skip (exists)"))
+                table_rows.append(
+                    ("FILE", old_name, new_name + suffix, "skip (exists)")
+                )
             elif dry_run:
                 print(f"⚠️  SKIP: {old_name} → {new_name}{suffix} (target exists)")
             continue
@@ -219,6 +240,8 @@ def _root_dir(movies_dir: str | None = None) -> Path:
 
 
 def rename(root_dir: str | None = None, execute: bool = False):
+    print("Movies: LLM-normalize names here -> movie_mapping.json -> preview table.")
+    print("--execute applies renames; default is dry-run (no moves).")
     root = _root_dir(root_dir)
     svc = os.environ.get("LLM_SERVICE", "openai")
     mapping = run_normalize_with_llm(root, svc)

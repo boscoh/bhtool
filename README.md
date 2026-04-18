@@ -20,14 +20,13 @@ Assorted CLI utilities that are handy in Bosco’s day-to-day work—version bum
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
 | **bumpver**     | Bump version in`pyproject.toml`, commit, push; PyPI publish is on by default (`--no-publish` to skip)                                                                                                          |   |
 | **run**         | Open macOS applications by partial name (e.g.`uvx bhtool run cursor` or `b run cursor` after a local install)                                                                                                  |   |
-| **clear-chmod** | Remove execute bit from non-shell files; tighten group/other write                                                                                                                                             |   |
+| **clr-chmod**   | Remove execute bit from non-shell files; tighten group/other write                                                                                                                                             |   |
 | **npread**      | Print the shape of NumPy`.npy` files                                                                                                                                                                           |   |
-| **dfplot**      | Find`**/data/results`, load parquet, plot time series, save `data_logger_results.png` and open it                                                                                                              |   |
 | **psword**      | Find processes by name;`--kill` to terminate                                                                                                                                                                   |   |
 | **rm-npm**      | Recursively delete`node_modules` dirs and `package-lock.json` files                                                                                                                                            |   |
-| **text2**       | Convert between Markdown, HTML, DOCX, and Pug (needs`pandoc` and related tools on `PATH`)                                                                                                                      |   |
+| **text**        | Convert between Markdown, HTML, DOCX, and Pug (needs`pandoc` and related tools on `PATH`)                                                                                                                      |   |
 | **todict**      | JSON or YAML file, or stdin, → Python`dict(...)`-style repr on stdout                                                                                                                                         |   |
-| **movies**      | `uvx bhtool movies rename` (or `b movies rename`) — ask an LLM for normalized names; writes `movie_mapping.json` in the **current working directory**; `--execute` applies renames (default is dry-run table) |   |
+| **movies**      | `uvx bhtool movies` (or `b movies`) — ask an LLM for normalized names; writes `movie_mapping.json` in the **current working directory**; `--execute` applies renames (default is dry-run table) |   |
 
 ### Movies + LLM
 

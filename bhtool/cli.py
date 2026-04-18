@@ -21,7 +21,9 @@ def run(*params: str):
 
 
 @app.command
-def bumpver(part: Literal["major", "minor", "patch"] | None = None, *, publish: bool = True):
+def bumpver(
+    part: Literal["major", "minor", "patch"] | None = None, *, publish: bool = True
+):
     """Bump version in pyproject.toml, commit, push, and optionally publish to PyPI."""
     from bhtool.bumpver import bumpver
 
@@ -29,11 +31,11 @@ def bumpver(part: Literal["major", "minor", "patch"] | None = None, *, publish: 
 
 
 @app.command
-def clear_chmod():
+def clr_chmod():
     """Remove execute permissions from non-script files and write permissions from group/other."""
-    from bhtool.clear_chmod import clear_chmod
+    from bhtool.clr_chmod import clr_chmod as clr_chmod_run
 
-    clear_chmod()
+    clr_chmod_run()
 
 
 @app.command
@@ -45,14 +47,6 @@ def npread(*files: str):
     from bhtool.npread import npread
 
     npread(files)
-
-
-@app.command(name="dfplot")
-def dfplot():
-    """Find and plot parquet files from data/results directory."""
-    from bhtool.dfplot import dfplot
-
-    dfplot()
 
 
 @app.command
@@ -75,11 +69,14 @@ def rm_npm():
 
 
 @app.command
-def text2(in_fname: str, out_fname: str):
+def text(in_fname: str | None = None, out_fname: str | None = None):
     """Interconvert text-based formats: md, pug, docx, html."""
-    from bhtool.text2 import text2
+    if in_fname is None or out_fname is None:
+        app["text"].help_print()
+        return
+    from bhtool.text import convert_text
 
-    text2(in_fname, out_fname)
+    convert_text(in_fname, out_fname)
 
 
 @app.command
@@ -90,25 +87,18 @@ def todict(json: str | None = None, yaml: str | None = None):
     todict(json=json, yaml=yaml)
 
 
-movies_app = App(
-    name="movies",
-    help="Manage movie directories and files: normalize names with LLM.",
-)
-
-
-@movies_app.command
-def rename(root_dir: str | None = None, execute: bool = False):
-    """Rename movie dirs and files to normalized names using mapping from LLM.
+@app.command(name="movies")
+def movies(root_dir: str | None = None, execute: bool = False):
+    """Normalize movie directory and file names with an LLM (dry-run table by default).
 
     :param root_dir: Root directory containing movies (positional); default is current working directory.
     :param execute: If true, perform renames; otherwise dry run (table output).
     """
     from bhtool.list_movies import rename
 
+    if root_dir == "rename":
+        root_dir = None
     rename(root_dir=root_dir, execute=execute)
-
-
-app.command(movies_app)
 
 
 def main() -> None:
