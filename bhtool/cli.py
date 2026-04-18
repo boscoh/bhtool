@@ -10,95 +10,95 @@ app = App(name="bhtool", help="boscoh tools")
 
 
 @app.command(name="run")
-def run(*params: str):
+def run_cmd(*params: str):
     """Open macOS applications by partial name match."""
     if not params:
         app["run"].help_print()
         return
-    from bhtool.run import run
+    import bhtool.run as run_mod
 
-    run(*params)
+    run_mod.run(*params)
 
 
-@app.command
-def bumpver(
+@app.command(name="bumpver")
+def bumpver_cmd(
     part: Literal["major", "minor", "patch"] | None = None, *, publish: bool = True
 ):
     """Bump version in pyproject.toml, commit, push, and optionally publish to PyPI."""
-    from bhtool.bumpver import bumpver
+    import bhtool.bumpver as bumpver_mod
 
-    bumpver(part, publish=publish)
+    bumpver_mod.bumpver(part, publish=publish)
 
 
-@app.command
-def clr_chmod():
+@app.command(name="clr_chmod")
+def clr_chmod_cmd():
     """Remove execute permissions from non-script files and write permissions from group/other."""
-    from bhtool.clr_chmod import clr_chmod as clr_chmod_run
+    import bhtool.clr_chmod as clr_chmod_mod
 
-    clr_chmod_run()
+    clr_chmod_mod.clr_chmod()
 
 
-@app.command
-def npread(*files: str):
+@app.command(name="npread")
+def npread_cmd(*files: str):
     """Print shape of numpy .npy files."""
     if not files:
         app["npread"].help_print()
         return
-    from bhtool.npread import npread
+    import bhtool.npread as npread_mod
 
-    npread(files)
+    npread_mod.npread(files)
 
 
-@app.command
-def psword(*words: str, kill: bool = False):
+@app.command(name="psword")
+def psword_cmd(*words: str, kill: bool = False):
     """Find processes by name and optionally kill them."""
     if not words:
         app["psword"].help_print()
         return
-    from bhtool.psword import psword
+    import bhtool.psword as psword_mod
 
-    psword(words, kill=kill)
+    psword_mod.psword(words, kill=kill)
 
 
-@app.command
-def rm_npm():
+@app.command(name="rm_npm")
+def rm_npm_cmd():
     """Recursively remove node_modules directories and package-lock.json files."""
-    from bhtool.rm_npm import rm_npm
+    import bhtool.rm_npm as rm_npm_mod
 
-    rm_npm()
+    rm_npm_mod.rm_npm()
 
 
-@app.command
-def text(in_fname: str | None = None, out_fname: str | None = None):
+@app.command(name="text")
+def text_cmd(in_fname: str | None = None, out_fname: str | None = None):
     """Interconvert text-based formats: md, pug, docx, html."""
     if in_fname is None or out_fname is None:
         app["text"].help_print()
         return
-    from bhtool.text import convert_text
+    import bhtool.text as text_mod
 
-    convert_text(in_fname, out_fname)
+    text_mod.convert_text(in_fname, out_fname)
 
 
-@app.command
-def todict(json: str | None = None, yaml: str | None = None):
+@app.command(name="todict")
+def todict_cmd(json: str | None = None, yaml: str | None = None):
     """Convert JSON or YAML to Python dict format."""
-    from bhtool.todict import todict
+    import bhtool.todict as todict_mod
 
-    todict(json=json, yaml=yaml)
+    todict_mod.todict(json=json, yaml=yaml)
 
 
 @app.command(name="movies")
-def movies(root_dir: str | None = None, execute: bool = False):
+def movies_cmd(root_dir: str | None = None, execute: bool = False):
     """Normalize movie directory and file names with an LLM (dry-run table by default).
 
     :param root_dir: Root directory containing movies (positional); default is current working directory.
     :param execute: If true, perform renames; otherwise dry run (table output).
     """
-    from bhtool.list_movies import rename
+    import bhtool.list_movies as list_movies_mod
 
     if root_dir == "rename":
         root_dir = None
-    rename(root_dir=root_dir, execute=execute)
+    list_movies_mod.rename(root_dir=root_dir, execute=execute)
 
 
 def main() -> None:

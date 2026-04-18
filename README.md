@@ -5,28 +5,28 @@ Assorted CLI utilities that are handy in Bosco’s day-to-day work—version bum
 ### Install options
 
 
-| Option                                    | Description                                                                                                         |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Option                                   | Description                                                                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | **`uvx bhtool …`**                       | Run from PyPI on demand (no clone). Example:`uvx bhtool --help`, `uvx bhtool run cursor`.                           |
-| **`uv tool install bhtool`**              | Install**`b`** / **`bhtool`** globally from PyPI (released versions).                                               |
+| **`uv tool install bhtool`**             | Install**`b`** / **`bhtool`** globally from PyPI (released versions).                                               |
 | **`uv sync`** then **`uv run bhtool …`** | Use the project venv from a checkout (no global install).                                                           |
-| **`uv tool install .`**                   | Install**`b`** / **`bhtool`** globally from the current directory (pinned copy).                                    |
-| **`uv tool install --editable .`**        | Install**`b`** / **`bhtool`** globally in **editable** mode from a checkout (code changes apply without reinstall). |
+| **`uv tool install .`**                  | Install**`b`** / **`bhtool`** globally from the current directory (pinned copy).                                    |
+| **`uv tool install --editable .`**       | Install**`b`** / **`bhtool`** globally in **editable** mode from a checkout (code changes apply without reinstall). |
 
 ## Commands
 
 
-| Command         | Description                                                                                                                                                                                                    |   |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| **bumpver**     | Bump version in`pyproject.toml`, commit, push; PyPI publish is on by default (`--no-publish` to skip)                                                                                                          |   |
-| **run**         | Open macOS applications by partial name (e.g.`uvx bhtool run cursor` or `b run cursor` after a local install)                                                                                                  |   |
-| **clr-chmod**   | Remove execute bit from non-shell files; tighten group/other write                                                                                                                                             |   |
-| **npread**      | Print the shape of NumPy`.npy` files                                                                                                                                                                           |   |
-| **psword**      | Find processes by name;`--kill` to terminate                                                                                                                                                                   |   |
-| **rm-npm**      | Recursively delete`node_modules` dirs and `package-lock.json` files                                                                                                                                            |   |
-| **text**        | Convert between Markdown, HTML, DOCX, and Pug (needs`pandoc` and related tools on `PATH`)                                                                                                                      |   |
-| **todict**      | JSON or YAML file, or stdin, → Python`dict(...)`-style repr on stdout                                                                                                                                         |   |
-| **movies**      | `uvx bhtool movies` (or `b movies`) — ask an LLM for normalized names; writes `movie_mapping.json` in the **current working directory**; `--execute` applies renames (default is dry-run table) |   |
+| Command       | Description                                                                                                                                                                                     |     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| **bumpver**   | Bump version in`pyproject.toml`, commit, push; PyPI publish is on by default (`--no-publish` to skip)                                                                                           |     |
+| **run**       | Open macOS applications by partial name (e.g.`uvx bhtool run cursor` or `b run cursor` after a local install)                                                                                   |     |
+| **clr-chmod** | Remove execute bit from non-shell files; tighten group/other write                                                                                                                              |     |
+| **npread**    | Print the shape of NumPy`.npy` files                                                                                                                                                            |     |
+| **psword**    | Find processes by name;`--kill` to terminate                                                                                                                                                    |     |
+| **rm-npm**    | Recursively delete`node_modules` dirs and `package-lock.json` files                                                                                                                             |     |
+| **text**      | Convert between Markdown, HTML, DOCX, and Pug (needs`pandoc` and related tools on `PATH`)                                                                                                       |     |
+| **todict**    | JSON or YAML file, or stdin, → Python`dict(...)`-style repr on stdout                                                                                                                           |     |
+| **movies**    | `uvx bhtool movies` (or `b movies`) — ask an LLM for normalized names; writes `movie_mapping.json` in the **current working directory**; `--execute` applies renames (default is dry-run table) |     |
 
 ### Movies + LLM
 
@@ -43,7 +43,7 @@ Node CLI: pug formatting, agent config copy. Usage: `jtools <subcommand>`
 **Run (after install):** `npx jtools <subcommand>` resolves the local `jtools` binary (same as `node_modules/.bin/jtools`). Examples: `npx jtools format-pug`, `npx jtools copy-agent`.
 
 
-| Subcommand     | Description                               |
-| ---------------- | ------------------------------------------- |
-| **format-pug** | Format pug in`./index.html`               |
+| Subcommand     | Description                              |
+| -------------- | ---------------------------------------- |
+| **format-pug** | Format pug in`./index.html`              |
 | **copy-agent** | Copy`~/.claude/CLAUDE.md` → `./AGENT.md` |

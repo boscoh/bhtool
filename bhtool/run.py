@@ -4,7 +4,7 @@
 
 from path import Path
 
-from bhtool.utils import run
+from bhtool.utils import run as run_shell
 
 search_dirs = [Path("/Applications"), Path.home() / "MyApps"]
 
@@ -20,4 +20,4 @@ def run(*params: str):
 
     params = [f'"{p}"' for p in params]
     cmd = "open -a " + " ".join(params)
-    run(cmd)
+    run_shell(cmd)
