@@ -26,10 +26,6 @@ _MOVIES_BORDER = "cyan"
 _MOVIES_TITLE = "movies"
 
 
-def _movies_console() -> Console:
-    return Console(highlight=False)
-
-
 def _panel_lines(body: Text | str, *, title: str = _MOVIES_TITLE, border: str = _MOVIES_BORDER) -> Panel:
     return Panel(
         body,
@@ -39,6 +35,32 @@ def _panel_lines(body: Text | str, *, title: str = _MOVIES_TITLE, border: str = 
         expand=True,
         title_align="left",
     )
+
+
+def _is_case_only_rename(old_path: Path, new_path: Path) -> bool:
+    """True when old_path and new_path are the same file differing only in case.
+
+    On case-insensitive filesystems (macOS, Windows) new_path.exists() is True
+    for a pure capitalization change, since it resolves to the same file.
+    """
+    try:
+        return old_path.samefile(new_path)
+    except OSError:
+        return False
+
+
+def _apply_rename(old_path: Path, new_path: Path) -> None:
+    """Rename, forcing a case change on case-insensitive filesystems."""
+    try:
+        old_path.rename(new_path)
+    except OSError:
+        tmp_path = old_path.with_name(old_path.name + ".bhtool-tmp")
+        old_path.rename(tmp_path)
+        try:
+            tmp_path.rename(new_path)
+        except OSError:
+            tmp_path.rename(old_path)
+            raise
 
 
 def _status_text(status: str) -> Text:
@@ -53,7 +75,10 @@ NORMALIZE_SYSTEM_PROMPT = textwrap.dedent("""
     You normalize movie and TV directory and file names for a media library.
 
     Rules:
-    - Output the title in Title Case.
+    - Output the title in Title Case: capitalize the first and last words and
+      all principal words, but keep articles, conjunctions and short
+      prepositions (a, an, the, and, or, of, in, on, to, for) lowercase
+      unless they are the first or last word (e.g. "The Lord of the Rings").
     - Keep the year as (YYYY) at the end when present; infer from the name
       if needed.
     - For TV series: preserve season markers at the end if present (e.g. S1,
@@ -112,7 +137,7 @@ async def normalize_names_with_llm(
     if not dir_names and not file_names:
         return {"directories": [], "files": []}
 
-    console = console or _movies_console()
+    console = console or Console()
     dir_list = "\n".join(f"- {n}" for n in dir_names) or "(none)"
     file_list = "\n".join(f"- {n}" for n in file_names) or "(none)"
     user_content = NORMALIZE_USER_PROMPT_TEMPLATE.format(
@@ -127,13 +152,17 @@ async def normalize_names_with_llm(
     try:
         async with get_llm_client(service) as client:
             llm_body = Text.assemble(
-                (f"service [bold]{client.service}[/bold]  model [bold]{client.model}[/bold]\n", ""),
+                ("service ", ""),
+                (client.service, "bold"),
+                (" model ", ""),
+                (client.model, "bold"),
+                ("\n", ""),
                 ("Requesting normalized names from the LLM…", "dim"),
             )
             console.print(_panel_lines(llm_body, title="LLM", border="blue"))
             result = await client.get_completion(messages)
     except Exception as e:
-        err = _movies_console(stderr=True)
+        err = Console(stderr=True)
         err.print(CycloptsPanel(str(e), title="Error", style="red"))
         err.print(
             CycloptsPanel(
@@ -154,7 +183,7 @@ async def normalize_names_with_llm(
 
 
 def run_normalize_with_llm(root_dir, service="openai", *, console: Console | None = None):
-    console = console or _movies_console()
+    console = console or Console()
     root = Path(root_dir)
     video_suffixes = {".avi", ".mkv", ".mp4", ".m4v", ".mov", ".wmv", ".webm"}
     skip_names = {
@@ -202,7 +231,7 @@ def run_normalize_with_llm(root_dir, service="openai", *, console: Console | Non
 def rename_movies(
     root_dir, dry_run=True, mapping=None, *, console: Console | None = None
 ):
-    console = console or _movies_console()
+    console = console or Console()
     root = Path(root_dir)
     if mapping is None:
         mapping = {"directories": [], "files": []}
@@ -223,7 +252,7 @@ def rename_movies(
             if table_rows is not None:
                 table_rows.append(("DIR", old_name, new_name, "skip (not found)"))
             continue
-        if new_path.exists():
+        if new_path.exists() and not _is_case_only_rename(old_path, new_path):
             skipped_count += 1
             if table_rows is not None:
                 table_rows.append(("DIR", old_name, new_name, "skip (exists)"))
@@ -231,7 +260,7 @@ def rename_movies(
         if dry_run:
             table_rows.append(("DIR", old_name, new_name, "would rename"))
         else:
-            old_path.rename(new_path)
+            _apply_rename(old_path, new_path)
             console.print(
                 Text.assemble(
                     ("✅ DIR  ", "green"),
@@ -256,7 +285,7 @@ def rename_movies(
                     ("FILE", old_name, new_name + suffix, "skip (not found)")
                 )
             continue
-        if new_path.exists():
+        if new_path.exists() and not _is_case_only_rename(old_path, new_path):
             skipped_count += 1
             if table_rows is not None:
                 table_rows.append(
@@ -266,7 +295,7 @@ def rename_movies(
         if dry_run:
             table_rows.append(("FILE", old_name, new_name + suffix, "would rename"))
         else:
-            old_path.rename(new_path)
+            _apply_rename(old_path, new_path)
             console.print(
                 Text.assemble(
                     ("✅ FILE ", "green"),
@@ -323,7 +352,7 @@ def _root_dir(movies_dir: str | None = None) -> Path:
 
 
 def rename(root_dir: str | None = None, execute: bool = False):
-    console = _movies_console()
+    console = Console()
     intro = Text.assemble(
         ("LLM-normalize names → ", ""),
         ("movie_mapping.json", "cyan"),
