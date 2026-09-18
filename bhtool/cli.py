@@ -60,15 +60,15 @@ def psword_cmd(*words: str, kill: bool = False):
     psword_mod.psword(words, kill=kill)
 
 
-@app.command(name="portkill")
-def portkill_cmd(*ports: int, kill: bool = False):
+@app.command(name="port")
+def port_cmd(*ports: int, kill: bool = False):
     """Find processes listening on TCP ports and optionally kill them.
 
     :param ports: TCP ports to inspect (one or more).
     :param kill: If true, SIGKILL each listener; otherwise list them.
     """
     if not ports:
-        app["portkill"].help_print()
+        app["port"].help_print()
         return
     import bhtool.portkill as portkill_mod
 
