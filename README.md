@@ -28,6 +28,7 @@ Assorted CLI utilities that are handy in Bosco’s day-to-day work—version bum
 | **text**      | Convert between Markdown, HTML, DOCX, and Pug (needs`pandoc` and related tools on `PATH`)                                                                                                       |     |
 | **todict**    | JSON or YAML file, or stdin, → Python`dict(...)`-style repr on stdout                                                                                                                           |     |
 | **movies**    | `uvx bhtool movies` (or `b movies`) — ask an LLM for normalized names; writes `movie_mapping.json` in the **current working directory**; `--execute` applies renames (default is dry-run table) |     |
+| **gdoc**      | Pull/push Google Docs as Markdown (`b gdoc pull|push|new|status|ls|account`). Uses gcloud's login: `gcloud auth login --enable-gdrive-access`. See `bhtool/gdoc.py` docstring |     |
 
 ### Movies + LLM
 

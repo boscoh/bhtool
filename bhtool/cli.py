@@ -6,7 +6,10 @@ from typing import Literal
 
 from cyclopts import App
 
+from bhtool.gdoc import app as gdoc_app
+
 app = App(name="bhtool", help="boscoh tools")
+app.command(gdoc_app)
 
 
 @app.command(name="run")
