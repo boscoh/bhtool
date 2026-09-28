@@ -24,7 +24,7 @@ def run_cmd(*params: str):
 def bumpver_cmd(
     part: Literal["major", "minor", "patch"] | None = None, *, publish: bool = True
 ):
-    """Bump version in pyproject.toml, commit, push, and optionally publish to PyPI."""
+    """Bump version in uv, commit, push, and publish."""
     import bhtool.bumpver as bumpver_mod
 
     bumpver_mod.bumpver(part, publish=publish)
@@ -32,7 +32,7 @@ def bumpver_cmd(
 
 @app.command(name="clr_chmod")
 def clr_chmod_cmd():
-    """Remove execute permissions from non-script files and write permissions from group/other."""
+    """Fix permissions for non-script files."""
     import bhtool.clr_chmod as clr_chmod_mod
 
     clr_chmod_mod.clr_chmod()
@@ -77,7 +77,7 @@ def port_cmd(*ports: int, kill: bool = False):
 
 @app.command(name="rm_npm")
 def rm_npm_cmd():
-    """Recursively remove node_modules directories and package-lock.json files."""
+    """Recursively remove node_modules & package-lock.json."""
     import bhtool.rm_npm as rm_npm_mod
 
     rm_npm_mod.rm_npm()
@@ -104,7 +104,7 @@ def todict_cmd(json: str | None = None, yaml: str | None = None):
 
 @app.command(name="movies")
 def movies_cmd(root_dir: str | None = None, execute: bool = False):
-    """Normalize movie directory and file names with an LLM (dry-run table by default).
+    """Normalize movie names with an LLM.
 
     :param root_dir: Root directory containing movies (positional); default is current working directory.
     :param execute: If true, perform renames; otherwise dry run (table output).
