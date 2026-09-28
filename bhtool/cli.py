@@ -117,4 +117,7 @@ def movies_cmd(root_dir: str | None = None, execute: bool = False):
 
 
 def main() -> None:
-    app()
+    try:
+        app()
+    except KeyboardInterrupt:
+        raise SystemExit(130)
