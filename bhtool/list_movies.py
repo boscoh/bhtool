@@ -351,7 +351,9 @@ def _root_dir(movies_dir: str | None = None) -> Path:
     return Path.cwd()
 
 
-def rename(root_dir: str | None = None, execute: bool = False):
+def rename(
+    root_dir: str | None = None, execute: bool = False, service: str | None = None
+):
     console = Console()
     intro = Text.assemble(
         ("LLM-normalize names → ", ""),
@@ -362,7 +364,7 @@ def rename(root_dir: str | None = None, execute: bool = False):
     )
     console.print(_panel_lines(intro, title=_MOVIES_TITLE, border=_MOVIES_BORDER))
     root = _root_dir(root_dir)
-    svc = os.environ.get("LLM_SERVICE", "openai")
+    svc = service or os.environ.get("LLM_SERVICE", "openai")
     mapping = run_normalize_with_llm(root, svc, console=console)
     mapping_path = Path.cwd() / "movie_mapping.json"
     mapping_path.write_text(json.dumps(mapping, indent=2))

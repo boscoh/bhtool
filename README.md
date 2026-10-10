@@ -32,7 +32,7 @@ Assorted CLI utilities that are handy in Bosco’s day-to-day work—version bum
 
 ### Movies + LLM
 
-`LLM_SERVICE` selects the backend (`openai`, `groq`, `ollama`, `bedrock`, …). Set it in the process environment or in **`bhtool/.env`** (loaded from the installed package directory). Model defaults come from [microeval](https://pypi.org/project/microeval/)’s config for that service.
+`b movies --service <name>` selects the backend for one run (`openai`, `groq`, `ollama`, `bedrock` — see `b movies --help`). `LLM_SERVICE` sets the default. Set `LLM_SERVICE` in the process environment or in **`bhtool/.env`** (loaded from the installed package directory). Model defaults come from [microeval](https://pypi.org/project/microeval/)’s config for that service.
 
 ---
 

@@ -7,6 +7,7 @@ from typing import Literal
 from cyclopts import App
 
 from bhtool.gdoc import app as gdoc_app
+from bhtool.llm_services import LLMService
 
 app = App(name="bhtool", help="boscoh tools")
 app.command(gdoc_app)
@@ -106,17 +107,22 @@ def todict_cmd(json: str | None = None, yaml: str | None = None):
 
 
 @app.command(name="movies")
-def movies_cmd(root_dir: str | None = None, execute: bool = False):
+def movies_cmd(
+    root_dir: str | None = None,
+    execute: bool = False,
+    service: LLMService | None = None,
+):
     """Normalize movie names with an LLM.
 
     :param root_dir: Root directory containing movies (positional); default is current working directory.
     :param execute: If true, perform renames; otherwise dry run (table output).
+    :param service: LLM service for normalization; default from LLM_SERVICE, else openai.
     """
     import bhtool.list_movies as list_movies_mod
 
     if root_dir == "rename":
         root_dir = None
-    list_movies_mod.rename(root_dir=root_dir, execute=execute)
+    list_movies_mod.rename(root_dir=root_dir, execute=execute, service=service)
 
 
 def main() -> None:
