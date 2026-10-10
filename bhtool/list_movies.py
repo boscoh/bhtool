@@ -92,14 +92,15 @@ NORMALIZE_SYSTEM_PROMPT = textwrap.dedent("""
       normalized name.
     - Strip release/quality tags: [1080p], [720p], [WEBRip], [BluRay],
       [YTS.MX], codec names, group names, etc.
-    - For files: normalize only the base name (before the extension); the
-      extension stays unchanged in the output.
+    - For files: normalize only the base name before the extension. Do not
+      include the extension in the normalized file name.
     - Preserve the original spelling of the title; only fix casing and
       punctuation.
 """).strip()
 
 NORMALIZE_USER_PROMPT_TEMPLATE = textwrap.dedent("""
-    Convert these names to normalized form.
+    Convert these names to normalized form. For files, return the base name
+    without the extension.
 
     Directory names:
     {dir_list}
@@ -109,21 +110,31 @@ NORMALIZE_USER_PROMPT_TEMPLATE = textwrap.dedent("""
 """).strip()
 
 
-class NameMapping(BaseModel):
-    """One original name and its normalized form."""
+class DirMapping(BaseModel):
+    """One original directory name and its normalized form."""
 
-    original: str = Field(description="The original directory or file name.")
-    normalized: str = Field(description="The normalized name.")
+    original: str = Field(description="The original directory name.")
+    normalized: str = Field(description="The normalized directory name.")
+
+
+class FileMapping(BaseModel):
+    """One original file name and its normalized base name."""
+
+    original: str = Field(description="The original file name, including its extension.")
+    normalized: str = Field(
+        description="The normalized base name, without the file extension."
+    )
 
 
 class NormalizedNameMapping(BaseModel):
     """Normalized names for the directories and files in one root directory."""
 
-    directories: list[NameMapping] = Field(
+    directories: list[DirMapping] = Field(
         default_factory=list, description="Normalized directory names."
     )
-    files: list[NameMapping] = Field(
-        default_factory=list, description="Normalized file names."
+    files: list[FileMapping] = Field(
+        default_factory=list,
+        description="Normalized file base names, without the file extensions.",
     )
 
 
@@ -273,6 +284,9 @@ def rename_movies(
         old_name, new_name = e["original"], e["normalized"]
         old_path = root / old_name
         suffix = Path(old_name).suffix
+        # The model returns the base name; drop the extension if it came along anyway.
+        if suffix and new_name.lower().endswith(suffix.lower()):
+            new_name = new_name[: -len(suffix)]
         new_path = root / (new_name + suffix)
         if old_name == new_name + suffix:
             continue
