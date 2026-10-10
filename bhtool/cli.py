@@ -116,7 +116,7 @@ def movies_cmd(
 
     :param root_dir: Root directory containing movies (positional); default is current working directory.
     :param execute: If true, perform renames; otherwise dry run (table output).
-    :param service: LLM service for normalization; default from LLM_SERVICE, else openai.
+    :param service: LLM service for normalization; default is detected from the environment.
     """
     import bhtool.list_movies as list_movies_mod
 

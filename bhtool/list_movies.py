@@ -3,7 +3,6 @@
 import asyncio
 import json
 import os
-import re
 import sys
 import textwrap
 
@@ -16,11 +15,18 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from microeval.llm import get_llm_client
+from pydantic import BaseModel, Field
+from pydantic_ai import Agent
+from pydantic_ai.models import infer_model
+
+from bhtool.llm_services import OLLAMA_BASE_URL, detect_service, model_for
 
 _pkg_root = Path(__file__).parent
 
 load_dotenv(_pkg_root / ".env")
+
+# Suppress the pydantic-ai first-run banner in this CLI.
+os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
 _MOVIES_BORDER = "cyan"
 _MOVIES_TITLE = "movies"
@@ -90,16 +96,10 @@ NORMALIZE_SYSTEM_PROMPT = textwrap.dedent("""
       extension stays unchanged in the output.
     - Preserve the original spelling of the title; only fix casing and
       punctuation.
-    - Return valid JSON only, no markdown or extra text.
 """).strip()
 
 NORMALIZE_USER_PROMPT_TEMPLATE = textwrap.dedent("""
-    Convert these names to normalized form. Return a single JSON object with
-    two keys:
-    - "directories": list of {{"original": "<dir name>",
-      "normalized": "<normalized dir name>"}}
-    - "files": list of {{"original": "<filename with extension>",
-      "normalized": "<normalized base name without extension>"}}
+    Convert these names to normalized form.
 
     Directory names:
     {dir_list}
@@ -109,81 +109,79 @@ NORMALIZE_USER_PROMPT_TEMPLATE = textwrap.dedent("""
 """).strip()
 
 
-def _parse_llm_json_object(result: dict) -> dict | None:
-    text = (result.get("text") or "").strip()
-    if not text:
-        return None
-    fence = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
-    if fence:
-        text = fence.group(1).strip()
-    try:
-        data = json.loads(text)
-        return data if isinstance(data, dict) else None
-    except json.JSONDecodeError:
-        pass
-    start, end = text.find("{"), text.rfind("}")
-    if start != -1 and end > start:
-        try:
-            data = json.loads(text[start : end + 1])
-            return data if isinstance(data, dict) else None
-        except json.JSONDecodeError:
-            return None
-    return None
+class NameMapping(BaseModel):
+    """One original name and its normalized form."""
+
+    original: str = Field(description="The original directory or file name.")
+    normalized: str = Field(description="The normalized name.")
+
+
+class NormalizedNameMapping(BaseModel):
+    """Normalized names for the directories and files in one root directory."""
+
+    directories: list[NameMapping] = Field(
+        default_factory=list, description="Normalized directory names."
+    )
+    files: list[NameMapping] = Field(
+        default_factory=list, description="Normalized file names."
+    )
 
 
 async def normalize_names_with_llm(
-    dir_names, file_names, service="openai", *, console: Console | None = None
+    dir_names, file_names, service=None, *, console: Console | None = None
 ):
     if not dir_names and not file_names:
         return {"directories": [], "files": []}
 
     console = console or Console()
+    service = service or detect_service()
     dir_list = "\n".join(f"- {n}" for n in dir_names) or "(none)"
     file_list = "\n".join(f"- {n}" for n in file_names) or "(none)"
     user_content = NORMALIZE_USER_PROMPT_TEMPLATE.format(
         dir_list=dir_list,
         file_list=file_list,
     )
-    messages = [
-        {"role": "system", "content": NORMALIZE_SYSTEM_PROMPT},
-        {"role": "user", "content": user_content},
-    ]
 
     try:
-        async with get_llm_client(service) as client:
-            llm_body = Text.assemble(
-                ("service ", ""),
-                (client.service, "bold"),
-                (" model ", ""),
-                (client.model, "bold"),
-                ("\n", ""),
-                ("Requesting normalized names from the LLM…", "dim"),
-            )
-            console.print(_panel_lines(llm_body, title="LLM", border="blue"))
-            result = await client.get_completion(messages)
+        if service == "ollama":
+            os.environ.setdefault("OLLAMA_BASE_URL", OLLAMA_BASE_URL)
+        model = infer_model(model_for(service))
+        agent = Agent(
+            model,
+            instructions=NORMALIZE_SYSTEM_PROMPT,
+            output_type=NormalizedNameMapping,
+        )
+        llm_body = Text.assemble(
+            ("service ", ""),
+            (service, "bold"),
+            (" model ", ""),
+            (model.model_name, "bold"),
+            ("\n", ""),
+            ("Requesting normalized names from the LLM…", "dim"),
+        )
+        console.print(_panel_lines(llm_body, title="LLM", border="blue"))
+        result = await agent.run(user_content)
+        mapping = result.output
     except Exception as e:
         err = Console(stderr=True)
         err.print(CycloptsPanel(str(e), title="Error", style="red"))
         err.print(
             CycloptsPanel(
-                "Set LLM_SERVICE (openai, groq, ollama, bedrock) and the matching API key or "
-                "AWS/Ollama; use bhtool/.env or your environment — see README.",
+                "Set LLM_SERVICE or --service and the matching API key. Providers: "
+                "groq, google, openai, anthropic, mistral, deepseek, xai, bedrock, "
+                "ollama. Use bhtool/.env or your environment — see README.",
                 title="Hint",
                 style="yellow",
             )
         )
         sys.exit(1)
-    if result.get("text", "").strip().startswith("Error:"):
-        raise RuntimeError(result["text"])
 
-    data = _parse_llm_json_object(result)
-    if not data:
-        raise RuntimeError("LLM response could not be parsed as JSON")
-    return {"directories": data.get("directories", []), "files": data.get("files", [])}
+    return mapping.model_dump()
 
 
-def run_normalize_with_llm(root_dir, service="openai", *, console: Console | None = None):
+def run_normalize_with_llm(root_dir, service=None, *, console: Console | None = None):
     console = console or Console()
+    service = service or detect_service()
     root = Path(root_dir)
     video_suffixes = {".avi", ".mkv", ".mp4", ".m4v", ".mov", ".wmv", ".webm"}
     skip_names = {
@@ -219,7 +217,7 @@ def run_normalize_with_llm(root_dir, service="openai", *, console: Console | Non
             f" {'video file' if len(file_names) == 1 else 'video files'} · ",
             "dim",
         ),
-        ("LLM_SERVICE=", "dim"),
+        ("service ", "dim"),
         (service, "bold"),
     )
     console.print(_panel_lines(scan, title="Scan", border=_MOVIES_BORDER))
@@ -364,7 +362,7 @@ def rename(
     )
     console.print(_panel_lines(intro, title=_MOVIES_TITLE, border=_MOVIES_BORDER))
     root = _root_dir(root_dir)
-    svc = service or os.environ.get("LLM_SERVICE", "openai")
+    svc = service or detect_service()
     mapping = run_normalize_with_llm(root, svc, console=console)
     mapping_path = Path.cwd() / "movie_mapping.json"
     mapping_path.write_text(json.dumps(mapping, indent=2))

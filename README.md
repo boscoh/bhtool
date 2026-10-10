@@ -32,7 +32,7 @@ Assorted CLI utilities that are handy in Bosco’s day-to-day work—version bum
 
 ### Movies + LLM
 
-`b movies --service <name>` selects the backend for one run (`openai`, `groq`, `ollama`, `bedrock` — see `b movies --help`). `LLM_SERVICE` sets the default. Set `LLM_SERVICE` in the process environment or in **`bhtool/.env`** (loaded from the installed package directory). Model defaults come from [microeval](https://pypi.org/project/microeval/)’s config for that service.
+`b movies` asks an LLM for normalized names. `--service <name>` selects a provider for one run (`groq`, `google`, `openai`, `anthropic`, `mistral`, `deepseek`, `xai`, `bedrock`, `ollama` — see `b movies --help`). Without it, the provider comes from `LLM_SERVICE`, else from the first API key in the environment, else `ollama`. Set keys in the process environment or in **`bhtool/.env`** (loaded from the installed package directory). Each provider uses one cheap model from `bhtool/llm_services.py` through [pydantic-ai](https://pypi.org/project/pydantic-ai/).
 
 ---
 
