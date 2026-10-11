@@ -32,7 +32,7 @@ PROVIDER_MODELS = {
     "openai": "gpt-6-luna",               # $0.10 / $0.50
     "anthropic": "claude-haiku-5-5",      # $0.10 / $0.50
     "mistral": "ministral-3-8b-25-12",    # $0.15 / $0.15
-    "deepseek": "deepseek-flash",         # $0.15 / $0.60 off-peak
+    "deepseek": "deepseek-v4-flash",      # $0.15 / $0.60 off-peak; thinking is on by default
     "xai": "grok-4.3",                    # $1.25 / $2.50
     "bedrock": "amazon.nova-lite-v1:0",   # region-dependent
     "ollama": "llama3.2",                 # free, local
